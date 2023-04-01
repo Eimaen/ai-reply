@@ -23,8 +23,12 @@ export async function start(): Promise<void> {
     ),
   );
 
-  const getMessageByReference = (await webpack.waitForProps('getMessageByReference')) as { getMessageByReference: (t: { guild_id?: string, channel_id: string, message_id: string } | undefined) => { state: number, message: Message } };
-  const myId: string = ((await webpack.waitForProps('getId')) as { getId: () => string }).getId()
+  const getMessageByReference = (await webpack.waitForProps("getMessageByReference")) as {
+    getMessageByReference: (
+      t: { guild_id?: string; channel_id: string; message_id: string } | undefined,
+    ) => { state: number; message: Message };
+  };
+  const myId: string = ((await webpack.waitForProps("getId")) as { getId: () => string }).getId();
 
   injector.utils.addPopoverButton((msg: Message, _: Channel) => {
     return {
@@ -36,45 +40,57 @@ export async function start(): Promise<void> {
         let currentMessage: Message = msg;
         messageChain.push(msg);
         while (currentMessage.messageReference) {
-          currentMessage = getMessageByReference.getMessageByReference(currentMessage.messageReference).message;
+          currentMessage = getMessageByReference.getMessageByReference(
+            currentMessage.messageReference,
+          ).message;
           messageChain.push(currentMessage);
         }
         let chatGptRequest: {
-          model: string,
+          model: string;
           messages: Array<{
-            role: string,
-            content: string
-          }>
+            role: string;
+            content: string;
+          }>;
         } = {
-          model: 'gpt-3.5-turbo',
-          messages: [{
-            role: 'system',
-            content: cfg.get('initialPrompt')
-          }, ...messageChain.slice(0, 5).reverse().map(message => ({ role: message.author.id == myId ? 'assistant' : 'user', content: message.content }))]
+          model: "gpt-3.5-turbo",
+          messages: [
+            {
+              role: "system",
+              content: cfg.get("initialPrompt"),
+            },
+            ...messageChain
+              .slice(0, 5)
+              .reverse()
+              .map((message) => ({
+                role: message.author.id == myId ? "assistant" : "user",
+                content: message.content,
+              })),
+          ],
         };
-        common.toast.toast(
-          "Message has been sent to ChatGPT...",
-          common.toast.Kind.SUCCESS,
-        );
+        common.toast.toast("Message has been sent to ChatGPT...", common.toast.Kind.SUCCESS);
         logger.log(chatGptRequest);
-        const chatGptResponse = await (await fetch(`https://api.openai.com/v1/chat/completions`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${cfg.get('openAiToken')}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(chatGptRequest)
-        }).catch(err => {
-          logger.error(err);
-        }))?.json();
+        const chatGptResponse = await (
+          await fetch(`https://api.openai.com/v1/chat/completions`, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${cfg.get("openAiToken")}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(chatGptRequest),
+          }).catch((err) => {
+            logger.error(err);
+          })
+        )?.json();
         logger.log(chatGptResponse);
-        let copy = Object.values(mod).find((e) => typeof e === "function") as (args: string) => void;
+        let copy = Object.values(mod).find((e) => typeof e === "function") as (
+          args: string,
+        ) => void;
         copy(chatGptResponse.choices[0].message.content);
         common.toast.toast(
           "AI Response has been copied to clipboard...",
           common.toast.Kind.SUCCESS,
         );
-      }
+      },
     };
   });
 }
