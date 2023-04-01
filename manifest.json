@@ -1,14 +1,17 @@
 {
   "id": "pw.eimaen.AIReply",
   "name": "AI Reply",
-  "description": "Answer discord message based on ChatGPT prompt",
+  "description": "Reply to a discord message based on ChatGPT prompt!",
   "author": {
     "name": "Eimaen",
     "discordID": "394601924881809408",
     "github": "Eimaen"
   },
   "version": "1.0.0",
-  "updater": {},
+  "updater": {
+    "type": "github",
+    "id": "Eimaen/ai-reply"
+  },
   "license": "MIT",
   "type": "replugged-plugin",
   "renderer": "src/index.ts"
