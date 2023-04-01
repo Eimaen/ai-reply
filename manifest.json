@@ -1,17 +1,14 @@
 {
-  "id": "dev.replugged.PluginTemplate",
-  "name": "Plugin Template",
-  "description": "A plugin template",
+  "id": "pw.eimaen.AIReply",
+  "name": "AI Reply",
+  "description": "Answer discord message based on ChatGPT prompt",
   "author": {
-    "name": "replugged",
-    "discordID": "1000992611840049192",
-    "github": "replugged-org"
+    "name": "Eimaen",
+    "discordID": "394601924881809408",
+    "github": "Eimaen"
   },
   "version": "1.0.0",
-  "updater": {
-    "type": "github",
-    "id": "replugged-org/plugin-template"
-  },
+  "updater": {},
   "license": "MIT",
   "type": "replugged-plugin",
   "renderer": "src/index.ts"
