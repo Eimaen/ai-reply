@@ -12,9 +12,18 @@ const injector = new Injector();
 interface Settings {
   initialPrompt?: string;
   openAiToken?: string;
+  keepContext?: number;
+  ignoreReplyChains?: boolean;
 }
 
-const cfg = await settings.init<Settings>("pw.eimaen.AIReply");
+const defaultSettings: Partial<Settings> = {
+  initialPrompt: "",
+  openAiToken: "",
+  keepContext: 5,
+  ignoreReplyChains: false,
+};
+
+export const cfg = await settings.init<Settings>("pw.eimaen.AIReply", defaultSettings);
 
 export async function start(): Promise<void> {
   const mod = await webpack.waitForModule(
@@ -30,20 +39,28 @@ export async function start(): Promise<void> {
   };
   const myId: string = ((await webpack.waitForProps("getId")) as { getId: () => string }).getId();
 
-  injector.utils.addPopoverButton((msg: Message, _: Channel) => {
+  injector.utils.addPopoverButton((msg: Message, chan: Channel) => {
     return {
       key: "aireply",
       label: "Click here to generate a reply.",
       icon: Icon,
       onClick: async () => {
         let messageChain: Message[] = [];
-        let currentMessage: Message = msg;
-        messageChain.push(msg);
-        while (currentMessage.messageReference) {
-          currentMessage = getMessageByReference.getMessageByReference(
-            currentMessage.messageReference,
-          ).message;
-          messageChain.push(currentMessage);
+        if (chan.isDM() || cfg.get("ignoreReplyChains")) {
+          messageChain.push(msg);
+          let messages = (
+            common.messages.getMessages(chan.id) as unknown as { _array: Message[] }
+          )._array.map((a) => a);
+          messages.reverse().forEach((m) => messageChain.push(m));
+        } else {
+          let currentMessage: Message = msg;
+          messageChain.push(msg);
+          while (currentMessage.messageReference) {
+            currentMessage = getMessageByReference.getMessageByReference(
+              currentMessage.messageReference,
+            ).message;
+            messageChain.push(currentMessage);
+          }
         }
         let chatGptRequest: {
           model: string;
@@ -59,7 +76,7 @@ export async function start(): Promise<void> {
               content: cfg.get("initialPrompt"),
             },
             ...messageChain
-              .slice(0, 5)
+              .slice(0, cfg.get("keepContext"))
               .reverse()
               .map((message) => ({
                 role: message.author.id == myId ? "assistant" : "user",
@@ -67,7 +84,6 @@ export async function start(): Promise<void> {
               })),
           ],
         };
-        common.toast.toast("Message has been sent to ChatGPT...", common.toast.Kind.SUCCESS);
         logger.log(chatGptRequest);
         const chatGptResponse = await (
           await fetch(`https://api.openai.com/v1/chat/completions`, {
