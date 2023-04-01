@@ -47,7 +47,6 @@ export async function start(): Promise<void> {
       onClick: async () => {
         let messageChain: Message[] = [];
         if (chan.isDM() || cfg.get("ignoreReplyChains")) {
-          messageChain.push(msg);
           let messages = (
             common.messages.getMessages(chan.id) as unknown as { _array: Message[] }
           )._array.map((a) => a);
