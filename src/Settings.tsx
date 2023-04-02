@@ -1,10 +1,9 @@
 import { components, util } from "replugged";
-import { ReactElement } from "react";
 import { cfg } from ".";
 
 const { FormItem, TextInput, TextArea, SliderItem, SwitchItem } = components;
 
-export default function Settings(): ReactElement {
+export default function Settings(): React.ReactElement {
   return (
     <div>
       <FormItem title="AI Prompt" style={{ marginBottom: "10px" }}>

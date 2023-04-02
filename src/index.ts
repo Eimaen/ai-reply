@@ -144,8 +144,9 @@ export async function start(): Promise<void> {
   });
 
   injector.after(moduleMessageWrapper, "Z", ([args], res: React.ReactElement) => {
-    if (contextMessages.includes(args.message.id))
+    if (contextMessages.includes(args.message.id)) {
       res?.props?.children[3]?.props?.children?.splice(1, 0, React.createElement(IconMessage));
+    }
     return res;
   });
 }

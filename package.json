@@ -1,6 +1,6 @@
 {
   "name": "ai-reply",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "description": "Reply to a discord message based on ChatGPT prompt!",
   "engines": {
     "node": ">=18.0.0",
