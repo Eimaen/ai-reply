@@ -8,7 +8,7 @@ export default function Settings(): ReactElement {
   return (
     <div>
       <FormItem title="AI Prompt" style={{ marginBottom: "10px" }}>
-        <TextArea {...util.useSetting(cfg, "initialPrompt", "")} />
+        <TextArea {...util.useSetting(cfg, "initialPrompt", "")} rows={25} />
       </FormItem>
       <FormItem title="OpenAI API Token" style={{ marginBottom: "10px" }}>
         <TextInput {...util.useSetting(cfg, "openAiToken", "")} />
