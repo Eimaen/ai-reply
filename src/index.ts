@@ -5,7 +5,6 @@ import { Channel, Message, User } from "discord-types/general";
 const { React } = common;
 
 import { Icon } from "./AiButton";
-import { ToggleContextIcon } from "./AiContextButton";
 import { IconMessage } from "./AiMessageIcon";
 import getSettingsPage from "./Settings";
 
