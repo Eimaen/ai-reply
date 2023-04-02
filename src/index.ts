@@ -1,9 +1,12 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
 import { Injector, Logger, common, settings, webpack } from "replugged";
-import { Channel, Message } from "discord-types/general";
+import { Channel, Message, User } from "discord-types/general";
+const { React } = common;
 
 import { Icon } from "./AiButton";
+import { ToggleContextIcon } from "./AiContextButton";
+import { IconMessage } from "./AiMessageIcon";
 import getSettingsPage from "./Settings";
 
 const logger = Logger.plugin("AiReply");
@@ -14,6 +17,7 @@ interface Settings {
   openAiToken?: string;
   keepContext?: number;
   ignoreReplyChains?: boolean;
+  manualContext?: boolean;
 }
 
 const defaultSettings: Partial<Settings> = {
@@ -21,11 +25,14 @@ const defaultSettings: Partial<Settings> = {
   openAiToken: "",
   keepContext: 5,
   ignoreReplyChains: false,
+  manualContext: false,
 };
 
 export const cfg = await settings.init<Settings>("pw.eimaen.AIReply", defaultSettings);
 
 export async function start(): Promise<void> {
+  let contextMessages: string[] = [];
+
   const mod = await webpack.waitForModule(
     webpack.filters.bySource(
       'document.queryCommandEnabled("copy")||document.queryCommandSupported("copy")',
@@ -39,6 +46,17 @@ export async function start(): Promise<void> {
   };
   const myId: string = ((await webpack.waitForProps("getId")) as { getId: () => string }).getId();
 
+  const moduleMessageWrapper = await webpack.waitForModule<{
+    Z: (
+      ...args: Array<{
+        decorations: React.ReactElement[][];
+        message: Message;
+        author: User;
+        channel: Channel;
+      }>
+    ) => unknown;
+  }>(webpack.filters.bySource('"BADGES"'));
+
   injector.utils.addPopoverButton((msg: Message, chan: Channel) => {
     return {
       key: "aireply",
@@ -46,11 +64,23 @@ export async function start(): Promise<void> {
       icon: Icon,
       onClick: async () => {
         let messageChain: Message[] = [];
-        if (chan.isDM() || cfg.get("ignoreReplyChains")) {
+        if (cfg.get("manualContext")) {
+          messageChain.push(msg);
           let messages = (
             common.messages.getMessages(chan.id) as unknown as { _array: Message[] }
           )._array.map((a) => a);
-          messages.reverse().forEach((m) => messageChain.push(m));
+          messages
+            .reverse()
+            .filter((m) => contextMessages.includes(m.id) && m.timestamp < msg.timestamp)
+            .forEach((m) => messageChain.push(m));
+        } else if (chan.isDM() || cfg.get("ignoreReplyChains")) {
+          let messages = (
+            common.messages.getMessages(chan.id) as unknown as { _array: Message[] }
+          )._array.map((a) => a);
+          messages
+            .reverse()
+            .filter((m) => m.timestamp < msg.timestamp)
+            .forEach((m) => messageChain.push(m));
         } else {
           let currentMessage: Message = msg;
           messageChain.push(msg);
@@ -107,6 +137,25 @@ export async function start(): Promise<void> {
         );
       },
     };
+  });
+
+  injector.utils.addPopoverButton((msg: Message, _: Channel) => {
+    return {
+      key: "aireply-context",
+      label: "Toggle ChatGPT context selection.",
+      icon: ToggleContextIcon,
+      onClick: () => {
+        if (contextMessages.includes(msg.id) ?? false)
+          contextMessages.splice(contextMessages.indexOf(msg.id), 1);
+        else contextMessages.push(msg.id);
+      },
+    };
+  });
+
+  injector.after(moduleMessageWrapper, "Z", ([args], res: React.ReactElement) => {
+    if (contextMessages.includes(args.message.id))
+      res?.props?.children[3]?.props?.children?.splice(1, 0, React.createElement(IconMessage));
+    return res;
   });
 }
 

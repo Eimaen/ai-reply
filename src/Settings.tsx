@@ -24,6 +24,9 @@ export default function Settings(): ReactElement {
       <SwitchItem {...util.useSetting(cfg, "ignoreReplyChains", false)}>
         Don't use reply chains when not in DM channel
       </SwitchItem>
+      <SwitchItem {...util.useSetting(cfg, "manualContext", false)}>
+        Use manual context selection
+      </SwitchItem>
     </div>
   );
 }
