@@ -25,7 +25,7 @@ const defaultSettings: Partial<Settings> = {
   openAiToken: "",
   keepContext: 5,
   ignoreReplyChains: false,
-  manualContext: false,
+  manualContext: true,
 };
 
 export const cfg = await settings.init<Settings>("pw.eimaen.AIReply", defaultSettings);
@@ -60,7 +60,7 @@ export async function start(): Promise<void> {
   injector.utils.addPopoverButton((msg: Message, chan: Channel) => {
     return {
       key: "aireply",
-      label: "Click here to generate a reply.",
+      label: "[Left Click] here to generate a reply, [Right Click] add a message to context",
       icon: Icon,
       onClick: async () => {
         let messageChain: Message[] = [];
@@ -136,15 +136,7 @@ export async function start(): Promise<void> {
           common.toast.Kind.SUCCESS,
         );
       },
-    };
-  });
-
-  injector.utils.addPopoverButton((msg: Message, _: Channel) => {
-    return {
-      key: "aireply-context",
-      label: "Toggle ChatGPT context selection.",
-      icon: ToggleContextIcon,
-      onClick: () => {
+      onContextMenu: () => {
         if (contextMessages.includes(msg.id) ?? false)
           contextMessages.splice(contextMessages.indexOf(msg.id), 1);
         else contextMessages.push(msg.id);
